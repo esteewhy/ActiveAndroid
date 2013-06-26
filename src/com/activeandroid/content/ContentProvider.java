@@ -97,7 +97,7 @@ public class ContentProvider extends android.content.ContentProvider {
 
 		if (id != null && id > 0) {
 			Uri retUri = createUri(type, id);
-			notifyChange(retUri);
+			notifyChange(uri);
 
 			return retUri;
 		}
@@ -128,8 +128,10 @@ public class ContentProvider extends android.content.ContentProvider {
 	@Override
 	public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
 		Class<? extends Model> type = getModelType(uri);
-		return Cache.openDatabase().query(Cache.getTableName(type), projection, selection, selectionArgs, null, null,
+		Cursor cursor = Cache.openDatabase().query(Cache.getTableName(type), projection, selection, selectionArgs, null, null,
 				sortOrder);
+		cursor.setNotificationUri(getContext().getContentResolver(), uri);
+		return cursor;
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////

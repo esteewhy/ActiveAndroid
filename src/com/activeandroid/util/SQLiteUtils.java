@@ -24,6 +24,7 @@ import java.util.List;
 
 import android.database.Cursor;
 import android.os.Build;
+import android.provider.BaseColumns;
 import android.text.TextUtils;
 
 import com.activeandroid.Cache;
@@ -150,7 +151,7 @@ public final class SQLiteUtils {
 				definition += "(" + column.length() + ")";
 			}
 
-			if (name.equals("Id")) {
+			if (name.equals(BaseColumns._ID)) {
 				definition += " PRIMARY KEY AUTOINCREMENT";
 			}
 
@@ -163,7 +164,7 @@ public final class SQLiteUtils {
 			}
 
 			if (FOREIGN_KEYS_SUPPORTED && ReflectionUtils.isModel(type)) {
-				definition += " REFERENCES " + Cache.getTableInfo((Class<? extends Model>) type).getTableName() + "(Id)";
+				definition += " REFERENCES " + Cache.getTableInfo((Class<? extends Model>) type).getTableName() + "(" + BaseColumns._ID + ")";
 				definition += " ON DELETE " + column.onDelete().toString().replace("_", " ");
 				definition += " ON UPDATE " + column.onUpdate().toString().replace("_", " ");
 			}

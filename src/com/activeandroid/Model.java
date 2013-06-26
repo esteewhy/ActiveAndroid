@@ -19,9 +19,13 @@ package com.activeandroid;
 import java.lang.reflect.Field;
 import java.util.List;
 
+import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
+import android.provider.BaseColumns;
 
 import com.activeandroid.annotation.Column;
 import com.activeandroid.content.ContentProvider;
@@ -37,7 +41,7 @@ public abstract class Model {
 	// PRIVATE MEMBERS
 	//////////////////////////////////////////////////////////////////////////////////////
 
-	@Column(name = "Id")
+	@Column(name = BaseColumns._ID)
 	private Long mId = null;
 
 	private TableInfo mTableInfo;
@@ -60,7 +64,7 @@ public abstract class Model {
 	}
 
 	public final void delete() {
-		Cache.openDatabase().delete(mTableInfo.getTableName(), "Id=?", new String[] { getId().toString() });
+		Cache.openDatabase().delete(mTableInfo.getTableName(), BaseColumns._ID + "=?", new String[] { getId().toString() });
 		Cache.removeEntity(this);
 
 		Cache.getContext().getContentResolver()
@@ -148,24 +152,34 @@ public abstract class Model {
 		}
 
 		if (mId == null) {
-			mId = db.insert(mTableInfo.getTableName(), null, values);
+			mId = ContentUris.parseId(Cache.getContext().getContentResolver().insert(ContentProvider.createUri(this.getClass(), null), values));
 		}
 		else {
-			db.update(mTableInfo.getTableName(), values, "Id=" + mId, null);
+			Cache.getContext().getContentResolver().update(
+				ContentProvider.createUri(this.getClass(), null),
+				values,
+				BaseColumns._ID + "=?",
+				new String[] { Long.toString(mId) }
+			);
 		}
 
-		Cache.getContext().getContentResolver()
-				.notifyChange(ContentProvider.createUri(mTableInfo.getType(), mId), null);
+		//Cache.getContext().getContentResolver()
+		//		.notifyChange(ContentProvider.createUri(mTableInfo.getType(), mId), null);
 	}
 
 	// Convenience methods
 
 	public static void delete(Class<? extends Model> type, long id) {
-		new Delete().from(type).where("Id=?", id).execute();
+		Cache.getContext().getContentResolver().delete(
+			ContentProvider.createUri(type, null),
+			BaseColumns._ID + "=?",
+			new String[] { Long.toString(id) }
+		);
+		//new Delete().from(type).where(BaseColumns._ID + "=?", id).execute();
 	}
 
 	public static <T extends Model> T load(Class<? extends Model> type, long id) {
-		return new Select().from(type).where("Id=?", id).executeSingle();
+		return new Select().from(type).where(BaseColumns._ID + "=?", id).executeSingle();
 	}
 
 	// Model population
@@ -232,7 +246,7 @@ public abstract class Model {
 
 					Model entity = Cache.getEntity(entityType, entityId);
 					if (entity == null) {
-						entity = new Select().from(entityType).where("Id=?", entityId).executeSingle();
+						entity = new Select().from(entityType).where(BaseColumns._ID + "=?", entityId).executeSingle();
 					}
 
 					value = entity;
